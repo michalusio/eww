@@ -33,7 +33,11 @@ impl Renderer {
     ///
     /// `output_format` needs to be either [`wgpu::TextureFormat::Rgba8UnormSrgb`] or
     /// [`wgpu::TextureFormat::Bgra8UnormSrgb`]. Panics otherwise.
-    pub fn new(device: &wgpu::Device, output_format: wgpu::TextureFormat) -> Self {
+    pub fn new(desc: RendererDescriptor) -> Self {
+        let RendererDescriptor {
+            device,
+            rt_format: output_format,
+        } = desc;
         if !(output_format == wgpu::TextureFormat::Rgba8UnormSrgb
             || output_format == wgpu::TextureFormat::Bgra8UnormSrgb)
         {
@@ -207,8 +211,8 @@ impl Renderer {
     /// Renders all egui meshes onto render_target.
     pub fn render<'a, M, T>(&mut self, desc: RenderDescriptor<'a, M, T>)
     where
-        M: Iterator<Item = &'a egui::ClippedMesh> + Clone,
-        T: Iterator<Item = &'a egui::Texture>,
+        M: IntoIterator<Item = &'a egui::ClippedMesh> + Clone,
+        T: IntoIterator<Item = &'a egui::Texture>,
     {
         let RenderDescriptor {
             device,
@@ -257,7 +261,7 @@ impl Renderer {
                 .upload(device, queue, util::mesh_index_data(mesh));
         }
 
-        for (i, egui::ClippedMesh(clip_rect, mesh)) in meshes.enumerate() {
+        for (i, egui::ClippedMesh(clip_rect, mesh)) in meshes.into_iter().enumerate() {
             pass.set_bind_group(1, self.get_texture_bind_group(mesh.texture_id), &[]);
 
             // Transform clip rect to physical pixels.
@@ -490,19 +494,25 @@ impl Renderer {
 }
 
 #[derive(Debug)]
+pub struct RendererDescriptor<'a> {
+    pub device: &'a wgpu::Device,
+    pub rt_format: wgpu::TextureFormat,
+}
+
+#[derive(Debug)]
 pub struct RenderDescriptor<'a, MeshIterator, TextureIterator>
 where
-    MeshIterator: Iterator<Item = &'a egui::ClippedMesh> + Clone,
-    TextureIterator: Iterator<Item = &'a egui::Texture>,
+    MeshIterator: IntoIterator<Item = &'a egui::ClippedMesh> + Clone,
+    TextureIterator: IntoIterator<Item = &'a egui::Texture>,
 {
-    device: &'a wgpu::Device,
-    queue: &'a wgpu::Queue,
-    encoder: &'a mut wgpu::CommandEncoder,
-    render_target: &'a wgpu::TextureView,
-    screen_descriptor: ScreenDescriptor,
-    load_operation: wgpu::LoadOp<wgpu::Color>,
-    meshes: MeshIterator,
-    textures_to_update: TextureIterator,
+    pub meshes: MeshIterator,
+    pub textures_to_update: TextureIterator,
+    pub device: &'a wgpu::Device,
+    pub queue: &'a wgpu::Queue,
+    pub encoder: &'a mut wgpu::CommandEncoder,
+    pub render_target: &'a wgpu::TextureView,
+    pub screen_descriptor: ScreenDescriptor,
+    pub load_operation: wgpu::LoadOp<wgpu::Color>,
 }
 
 /// Information about the screen used for rendering.

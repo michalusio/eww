@@ -11,9 +11,9 @@ use std::hash::{Hash, Hasher};
 const SCROLL_LINE: f32 = 24.0;
 
 /// Platform creation descriptor
-pub struct PlatformDescriptor {
+pub struct PlatformDescriptor<'a> {
     /// Winit window
-    pub window: winit::window::Window,
+    pub window: &'a winit::window::Window,
     /// Egui style configuration.
     pub style: egui::Style,
     /// Egui font configuration.

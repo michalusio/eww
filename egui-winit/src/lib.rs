@@ -25,7 +25,7 @@ pub struct PlatformDescriptor<'a> {
 
 /// egui platform support for winit.
 pub struct Platform {
-    context: CtxRef,
+    ctx: CtxRef,
 
     raw_input: egui::RawInput,
     pointer_pos: egui::Pos2,
@@ -40,9 +40,9 @@ pub struct Platform {
 impl Platform {
     /// Create a new [`Platform`].
     pub fn new(desc: PlatformDescriptor) -> Self {
-        let context = CtxRef::default();
-        context.set_style(desc.style);
-        context.set_fonts(desc.font_definitions);
+        let ctx = CtxRef::default();
+        ctx.set_style(desc.style);
+        ctx.set_fonts(desc.font_definitions);
 
         let pointer_pos = Default::default();
         let modifier_state = winit::event::ModifiersState::empty();
@@ -60,7 +60,7 @@ impl Platform {
         };
 
         Self {
-            context,
+            ctx,
 
             raw_input,
             pointer_pos,
@@ -113,11 +113,11 @@ impl Platform {
                 MouseWheel { delta, .. } => match delta {
                     winit::event::MouseScrollDelta::LineDelta(x, y) => {
                         self.raw_input.scroll_delta = vec2(*x, *y) * SCROLL_LINE;
-                        self.context().wants_pointer_input()
+                        self.ctx().wants_pointer_input()
                     }
                     winit::event::MouseScrollDelta::PixelDelta(delta) => {
                         self.raw_input.scroll_delta = vec2(delta.x as f32, delta.y as f32);
-                        self.context().wants_pointer_input()
+                        self.ctx().wants_pointer_input()
                     }
                 },
                 Touch(touch) => {
@@ -151,7 +151,7 @@ impl Platform {
                     self.raw_input
                         .events
                         .push(egui::Event::PointerMoved(self.pointer_pos));
-                    self.context().is_using_pointer()
+                    self.ctx().is_using_pointer()
                 }
                 CursorLeft { .. } => {
                     self.raw_input.events.push(egui::Event::PointerGone);
@@ -159,7 +159,7 @@ impl Platform {
                 }
                 ModifiersChanged(input) => {
                     self.modifier_state = *input;
-                    self.context().wants_keyboard_input()
+                    self.ctx().wants_keyboard_input()
                 }
                 KeyboardInput {
                     input:
@@ -173,7 +173,7 @@ impl Platform {
                     if let Some(event) = self.handle_key(*key, *state) {
                         self.raw_input.events.push(event);
                     }
-                    self.context().wants_keyboard_input()
+                    self.ctx().wants_keyboard_input()
                 }
                 ReceivedCharacter(ch) => {
                     if util::is_egui_printable(*ch)
@@ -184,7 +184,7 @@ impl Platform {
                             .events
                             .push(egui::Event::Text(ch.to_string()));
                     }
-                    self.context().wants_keyboard_input()
+                    self.ctx().wants_keyboard_input()
                 }
                 _ => false,
             }
@@ -197,7 +197,7 @@ impl Platform {
     pub fn begin_frame(&mut self) {
         self.raw_input.time = Some(self.start_instant.elapsed().as_secs_f64());
 
-        self.context.begin_frame(self.raw_input.take());
+        self.ctx.begin_frame(self.raw_input.take());
     }
 
     /// Ends the frame.
@@ -213,7 +213,7 @@ impl Platform {
                 text_cursor: _,
             },
             shapes,
-        ) = self.context.end_frame();
+        ) = self.ctx.end_frame();
         Self::handle_cursor_icon(cursor_icon, window);
         Self::handle_copied_text(copied_text, self.clipboard.as_mut());
         Self::handle_url(open_url);
@@ -222,8 +222,8 @@ impl Platform {
     }
 
     /// Returns the internal egui context.
-    pub fn context(&self) -> CtxRef {
-        self.context.clone()
+    pub fn ctx(&self) -> CtxRef {
+        self.ctx.clone()
     }
 }
 

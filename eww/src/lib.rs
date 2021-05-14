@@ -28,8 +28,8 @@ impl Backend {
 
         let platform = Platform::new(PlatformDescriptor {
             window,
-            font_definitions,
             style,
+            font_definitions,
         });
 
         let renderer = Renderer::new(RendererDescriptor { device, rt_format });
@@ -42,7 +42,7 @@ impl Backend {
     }
 
     // TODO: is this better than Self::render() taking a closure?
-    // It would be interesting to contiue building the ui after ending (pausing) a frame.
+    // It would be interesting if you could continue building the ui after ending (pausing) a frame.
     //pub fn begin_frame(&mut self) {
 
     //}
@@ -50,10 +50,9 @@ impl Backend {
     //pub fn end_frame(&mut self) {
     //}
 
-    pub fn render<'a, F, I>(&mut self, desc: RenderDescriptor<'a, I>, build_ui: F)
+    pub fn render<F>(&mut self, desc: RenderDescriptor, build_ui: F)
     where
         F: FnOnce(egui::CtxRef),
-        I: IntoIterator<Item = &'a egui::Texture>,
     {
         let RenderDescriptor {
             textures_to_update,
@@ -80,17 +79,19 @@ impl Backend {
 
         let _ = needs_redraw; // TODO use
 
-        let meshes = self.ctx().tessellate(shapes);
-        let meshes = meshes.iter();
+        let meshes = &self.ctx().tessellate(shapes);
 
+        // this is a mess.
+        // TODO: use iterators in the first place instead of slices
+        let textures_to_update = textures_to_update.iter().copied();
         let egui_texture = self.ctx().texture();
-        let egui_texture = egui_texture.as_ref();
-        let egui_texture = std::iter::once(egui_texture);
-        let textures_to_update = egui_texture.chain(textures_to_update);
+        let egui_texture = std::iter::once(egui_texture.as_ref());
+        let textures_to_update: Vec<&egui::Texture> =
+            textures_to_update.chain(egui_texture).collect();
 
         self.renderer.render(renderer::RenderDescriptor {
             meshes,
-            textures_to_update,
+            textures_to_update: &textures_to_update,
             device,
             queue,
             encoder,
@@ -101,7 +102,7 @@ impl Backend {
     }
 
     pub fn ctx(&self) -> egui::CtxRef {
-        self.platform.context()
+        self.platform.ctx()
     }
 
     pub fn platform(&self) -> &Platform {
@@ -135,11 +136,9 @@ pub struct BackendDescriptor<'a> {
     pub font_definitions: egui::FontDefinitions,
 }
 
-pub struct RenderDescriptor<'a, TextureIterator>
-where
-    TextureIterator: IntoIterator<Item = &'a egui::Texture>,
-{
-    pub textures_to_update: TextureIterator,
+pub struct RenderDescriptor<'a> {
+    // TODO: turn into iterator
+    pub textures_to_update: &'a [&'a egui::Texture],
     pub window: &'a window::Window,
     pub device: &'a wgpu::Device,
     pub queue: &'a wgpu::Queue,

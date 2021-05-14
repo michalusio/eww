@@ -212,11 +212,7 @@ impl Renderer {
     }
 
     /// Renders all egui meshes onto render_target.
-    pub fn render<'a, M, T>(&mut self, desc: RenderDescriptor<'a, M, T>)
-    where
-        M: IntoIterator<Item = &'a egui::ClippedMesh> + Clone,
-        T: IntoIterator<Item = &'a egui::Texture>,
-    {
+    pub fn render(&mut self, desc: RenderDescriptor) {
         let RenderDescriptor {
             device,
             queue,
@@ -257,14 +253,14 @@ impl Renderer {
 
         self.vbo_pool.clear();
         self.ibo_pool.clear();
-        for egui::ClippedMesh(_, mesh) in meshes.clone() {
+        for egui::ClippedMesh(_, mesh) in meshes {
             self.vbo_pool
                 .upload(device, queue, util::mesh_vertex_data(mesh));
             self.ibo_pool
                 .upload(device, queue, util::mesh_index_data(mesh));
         }
 
-        for (i, egui::ClippedMesh(clip_rect, mesh)) in meshes.into_iter().enumerate() {
+        for (i, egui::ClippedMesh(clip_rect, mesh)) in meshes.iter().enumerate() {
             pass.set_bind_group(1, self.get_texture_bind_group(mesh.texture_id), &[]);
 
             // Transform clip rect to physical pixels.
@@ -502,14 +498,12 @@ pub struct RendererDescriptor<'a> {
     pub rt_format: wgpu::TextureFormat,
 }
 
-#[derive(Debug)]
-pub struct RenderDescriptor<'a, MeshIterator, TextureIterator>
-where
-    MeshIterator: IntoIterator<Item = &'a egui::ClippedMesh> + Clone,
-    TextureIterator: IntoIterator<Item = &'a egui::Texture>,
-{
-    pub meshes: MeshIterator,
-    pub textures_to_update: TextureIterator,
+//#[derive(Debug)]
+pub struct RenderDescriptor<'a> {
+    // TODO: turn into iterator
+    pub meshes: &'a [egui::ClippedMesh],
+    // TODO: turn into iterator
+    pub textures_to_update: &'a [&'a egui::Texture],
     pub device: &'a wgpu::Device,
     pub queue: &'a wgpu::Queue,
     pub encoder: &'a mut wgpu::CommandEncoder,

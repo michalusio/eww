@@ -1,5 +1,8 @@
 //! [egui](https://github.com/emilk/egui) platform support for [winit](https://github.com/rust-windowing/winit)
 
+pub use egui;
+pub use winit;
+
 use egui::{math::vec2, paint::ClippedShape, CtxRef, Pos2};
 use winit::event::Event;
 

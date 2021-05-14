@@ -1,6 +1,9 @@
 //! [egui](https://github.com/emilk/egui) rendering support
 //! for [wgpu](https://github.com/gfx-rs/wgpu-rs).
 
+pub use egui;
+pub use wgpu;
+
 use wgpu::util::DeviceExt as _;
 use wgpu_util::{BufferPool, BufferPoolDescriptor};
 

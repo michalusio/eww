@@ -635,29 +635,18 @@ impl RenderTarget {
 }
 
 mod util {
-    // This will be useable as soon as another release of bytemuck is available.
+    use bytemuck::TransparentWrapper;
 
-    //use bytemuck::TransparentWrapper;
-    //
-    //#[derive(Copy, Clone, TransparentWrapper)]
-    //#[repr(transparent)]
-    //struct VertexWrapper(egui::epaint::Vertex);
-    //
-    //// NOTE: Not yet derivable in combination with `bytemuck::TransparentWrapper`
-    //unsafe impl bytemuck::Zeroable for VertexWrapper {}
-    //unsafe impl bytemuck::Pod for VertexWrapper {}
-    //
+    #[derive(Copy, Clone, TransparentWrapper)]
+    #[repr(transparent)]
+    struct VertexWrapper(egui::epaint::Vertex);
 
-    // for the moment we use this as a replacement for `bytemuck::TransparentWrapper::wrap_slice
-    fn as_byte_slice<T>(slice: &[T]) -> &[u8] {
-        let len = slice.len() * std::mem::size_of::<T>();
-        let ptr = slice.as_ptr() as *const u8;
-        unsafe { std::slice::from_raw_parts(ptr, len) }
-    }
+    // NOTE: Not derivable in combination with `bytemuck::TransparentWrapper`
+    unsafe impl bytemuck::Zeroable for VertexWrapper {}
+    unsafe impl bytemuck::Pod for VertexWrapper {}
 
     pub fn mesh_vertex_data(mesh: &egui::epaint::Mesh) -> &[u8] {
-        //bytemuck::cast_slice(VertexWrapper::wrap_slice(&mesh.vertices))
-        as_byte_slice(&mesh.vertices)
+        bytemuck::cast_slice(VertexWrapper::wrap_slice(&mesh.vertices))
     }
 
     pub fn mesh_index_data(mesh: &egui::epaint::Mesh) -> &[u8] {

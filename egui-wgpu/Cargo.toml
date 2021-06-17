@@ -15,7 +15,7 @@ egui = "0.12.0"
 wgpu = "0.8.1"
 
 wgpu-util = "0.0.0-alpha.4"
-bytemuck = { version = "1.5.1", features = [ "derive" ] }
+bytemuck = { version = "1.7.0", features = [ "derive" ] }
 mint = "0.5.6"
 #wgpu-util = { git = "https://github.com/LU15W1R7H/wgpu-util", branch = "main" }
 #bytemuck = { git = "https://github.com/Lokathor/bytemuck", branch = "main", features = [ "derive" ] }

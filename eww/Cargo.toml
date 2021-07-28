@@ -1,6 +1,6 @@
 [package]
 name = "eww"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 authors = ["Luis Wirth <lwirth2000@gmail.com>"]
 edition = "2018"
 
@@ -11,6 +11,6 @@ repository = "https://github.com/LU15W1R7H/eww"
 license = "Apache-2.0"
 
 [dependencies]
-egui-winit = { version = "0.0.1-alpha.1", path = "../egui-winit" }
-egui-wgpu = { version = "0.0.1-alpha.0", path = "../egui-wgpu" }
+egui-winit = { version = "0.0.1-alpha.2", path = "../egui-winit" }
+egui-wgpu = { version = "0.0.1-alpha.1", path = "../egui-wgpu" }
 

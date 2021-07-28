@@ -210,7 +210,7 @@ impl Platform {
                 copied_text,
                 needs_repaint,
                 events: _,
-                text_cursor: _,
+                text_cursor_pos: _,
             },
             shapes,
         ) = self.ctx.end_frame();

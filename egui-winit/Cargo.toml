@@ -11,7 +11,7 @@ repository = "https://github.com/LU15W1R7H/eww"
 license = "Apache-2.0"
 
 [dependencies]
-egui = "0.12.0"
+egui = "0.13.1"
 winit = "0.25.0"
 
 copypasta = "0.7.1"

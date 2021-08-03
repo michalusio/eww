@@ -14,3 +14,6 @@ license = "Apache-2.0"
 egui-winit = { version = "0.0.1-alpha.2", path = "../egui-winit" }
 egui-wgpu = { version = "0.0.1-alpha.1", path = "../egui-wgpu" }
 
+[dev-dependencies]
+futures = "0.3.16"
+

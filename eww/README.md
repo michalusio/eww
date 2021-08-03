@@ -22,6 +22,8 @@ The eww crate is build on top of egui-winit and egui-wgpu
 
 For just using the winit-wgpu combination, eww is recommended.
 
+You can find a basic usage example under `eww/examples/basic`.
+
 ## egui-{winit, wgpu} crates
 
 If you're intrested in building your own backend then you can either use the

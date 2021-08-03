@@ -425,12 +425,11 @@ impl Renderer {
             egui::TextureId::User(id) => {
                 let id = id as usize;
                 assert!(id < self.user_textures.len());
-                &(self
-                    .user_textures
+                self.user_textures
                     .get(id)
                     .unwrap_or_else(|| panic!("user texture {} not found", id))
                     .as_ref()
-                    .unwrap_or_else(|| panic!("user texture {} freed", id)))
+                    .unwrap_or_else(|| panic!("user texture {} freed", id))
             }
         }
     }

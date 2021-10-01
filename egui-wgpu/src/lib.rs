@@ -52,7 +52,7 @@ impl Renderer {
             contents: bytemuck::bytes_of(&Globals {
                 screen_size: [0.0, 0.0],
             }),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -68,7 +68,7 @@ impl Renderer {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStage::VERTEX,
+                        visibility: wgpu::ShaderStages::VERTEX,
                         ty: wgpu::BindingType::Buffer {
                             has_dynamic_offset: false,
                             min_binding_size: None,
@@ -78,7 +78,7 @@ impl Renderer {
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler {
                             filtering: true,
                             comparison: false,
@@ -112,7 +112,7 @@ impl Renderer {
                 label: Some("egui_wgpu_texture_bind_group_layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         multisampled: false,
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -139,7 +139,7 @@ impl Renderer {
                 module: &vs_module,
                 buffers: &[wgpu::VertexBufferLayout {
                     array_stride: 5 * 4,
-                    step_mode: wgpu::InputStepMode::Vertex,
+                    step_mode: wgpu::VertexStepMode::Vertex,
                     attributes: &wgpu::vertex_attr_array![
                         // vec2 position
                         0 => Float32x2,
@@ -182,18 +182,18 @@ impl Renderer {
                             operation: wgpu::BlendOperation::Add,
                         },
                     }),
-                    write_mask: wgpu::ColorWrite::ALL,
+                    write_mask: wgpu::ColorWrites::ALL,
                 }],
             }),
         });
 
         let vbo_pool = BufferPool::new(&BufferPoolDescriptor {
             label: Some("egui_wgpu_vertex_buffer_pool"),
-            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
         let ibo_pool = BufferPool::new(&BufferPoolDescriptor {
             label: Some("egui_wgpu_index_buffer_pool"),
-            usage: wgpu::BufferUsage::INDEX | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
         });
 
         Self {
@@ -356,7 +356,7 @@ impl Renderer {
         }
         // we need to convert the texture into rgba_srgb format
         let mut pixels: Vec<u8> = Vec::with_capacity(egui_texture.pixels.len() * 4);
-        for srgba in egui_texture.srgba_pixels() {
+        for srgba in egui_texture.srgba_pixels(1.0) {
             pixels.push(srgba.r());
             pixels.push(srgba.g());
             pixels.push(srgba.b());
@@ -456,7 +456,7 @@ impl Renderer {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
         });
 
         queue.write_texture(
@@ -464,6 +464,7 @@ impl Renderer {
                 texture: &texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
             },
             egui_texture.pixels.as_slice(),
             wgpu::ImageDataLayout {
@@ -578,7 +579,7 @@ impl RenderTarget {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: texture_format,
-            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::RENDER_ATTACHMENT,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
         };
 
         let texture = device.create_texture(&descriptor);
@@ -589,7 +590,7 @@ impl RenderTarget {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         multisampled: false,
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -599,7 +600,7 @@ impl RenderTarget {
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Sampler {
                         comparison: false,
                         filtering: true,

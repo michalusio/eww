@@ -9,10 +9,6 @@ a [winit](https://github.com/rust-windowing/winit) platform and a [wgpu](https:/
 This repository contains:
 - the eww crate, which builds on top of the egui-{winit, wgpu}.
 
-## Status
-
-eww is in early development. Therefore all crates are at `v0.0.1-alpha.x`
-
 ## eww crate
 
 The eww crate is build on top of egui-winit and egui-wgpu

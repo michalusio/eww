@@ -1,13 +1,18 @@
-[workspace]
-resolver = "2"
+[package]
+name = "eww"
+version = "0.1.0"
+authors = ["Luis Wirth <lwirth2000@gmail.com>"]
+edition = "2021"
 
-members = [
-	"eww",
-	"egui-winit",
-	"egui-wgpu",
-]
+description = "egui backend (winit + wgpu)"
+keywords = ["egui", "winit", "wgpu", "gui", "backend"]
+homepage = "https://github.com/LU15W1R7H/eww"
+repository = "https://github.com/LU15W1R7H/eww"
+license = "Apache-2.0"
 
-[patch.crates-io]
-eww = { path = "eww" }
-egui-winit = { path = "egui-winit" }
-egui-wgpu = { path = "egui-wgpu" }
+[dependencies]
+egui-wgpu = "0.18.0"
+egui-winit = "0.18.0"
+
+[dev-dependencies]
+futures = "0.3.21"

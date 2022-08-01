@@ -5,8 +5,8 @@ pub use platform::egui;
 pub use platform::winit;
 pub use renderer::wgpu;
 
-use platform::State as Platform;
-use renderer::renderer::RenderPass as Renderer;
+pub use platform::State as Platform;
+pub use renderer::renderer::RenderPass as Renderer;
 
 use egui::Context as Ctx;
 use winit::window;

@@ -1,3 +1,5 @@
+pub mod render_target;
+
 pub use egui_wgpu as renderer;
 pub use egui_winit as platform;
 
@@ -19,17 +21,14 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub fn new(desc: BackendDescriptor) -> Self {
+    pub fn new<T>(desc: BackendDescriptor<T>) -> Self {
         let BackendDescriptor {
-            window,
+            event_loop,
             device,
             rt_format,
         } = desc;
 
-        let platform = Platform::new(
-            wgpu::Limits::default().max_texture_dimension_2d as usize,
-            window,
-        );
+        let platform = Platform::new(event_loop);
 
         let renderer = Renderer::new(device, rt_format, 0);
 
@@ -91,9 +90,6 @@ impl Backend {
         self.platform
             .handle_platform_output(window, &self.ctx, full_output.platform_output);
 
-        // TODO: use this
-        let _ = full_output.needs_repaint;
-
         let clipped_primitives = self.ctx().tessellate(full_output.shapes);
 
         self.renderer
@@ -142,9 +138,9 @@ impl Backend {
 }
 
 /// Backend creation descriptor
-pub struct BackendDescriptor<'a> {
+pub struct BackendDescriptor<'a, T: 'static> {
     /// Winit window
-    pub window: &'a window::Window,
+    pub event_loop: &'a winit::event_loop::EventLoop<T>,
     /// Wgpu device
     pub device: &'a wgpu::Device,
     /// Render target format

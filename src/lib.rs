@@ -29,9 +29,7 @@ impl Backend {
         } = desc;
 
         let platform = Platform::new(event_loop);
-
-        let renderer = Renderer::new(device, rt_format, 0);
-
+        let renderer = Renderer::new(device, rt_format, 1);
         let ctx = Ctx::default();
 
         Self {

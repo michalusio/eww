@@ -11,8 +11,8 @@ repository = "https://github.com/LU15W1R7H/eww"
 license = "Apache-2.0"
 
 [dependencies]
-egui-wgpu = "0.18.0"
-egui-winit = "0.18.0"
+egui-wgpu = { git = "https://github.com/emilk/egui" }
+egui-winit = { git = "https://github.com/emilk/egui" }
 
 [dev-dependencies]
 futures = "0.3.21"

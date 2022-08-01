@@ -1,17 +1,19 @@
 pub use egui_wgpu as renderer;
 pub use egui_winit as platform;
 
-pub use platform::egui; // same as renderer::egui
+pub use platform::egui;
 pub use platform::winit;
 pub use renderer::wgpu;
 
-use platform::{Platform, PlatformDescriptor};
-use renderer::{Renderer, RendererDescriptor};
+use platform::State as Platform;
+use renderer::renderer::RenderPass as Renderer;
 
+use egui::Context as Ctx;
 use winit::window;
 
 /// Egui backend with winit platform and wgpu renderer
 pub struct Backend {
+    ctx: Ctx,
     platform: Platform,
     renderer: Renderer,
 }
@@ -22,23 +24,32 @@ impl Backend {
             window,
             device,
             rt_format,
-            style,
-            font_definitions,
         } = desc;
 
-        let platform = Platform::new(PlatformDescriptor {
+        let platform = Platform::new(
+            wgpu::Limits::default().max_texture_dimension_2d as usize,
             window,
-            style,
-            font_definitions,
-        });
+        );
 
-        let renderer = Renderer::new(RendererDescriptor { device, rt_format });
+        let renderer = Renderer::new(device, rt_format, 0);
 
-        Self { platform, renderer }
+        let ctx = Ctx::default();
+
+        Self {
+            ctx,
+            platform,
+            renderer,
+        }
     }
 
-    pub fn handle_event<T>(&mut self, event: &winit::event::Event<T>) {
-        self.platform.handle_event(event);
+    // output indicates if egui wants exclusive access to this event
+    pub fn handle_event<T>(&mut self, event: &winit::event::Event<T>) -> bool {
+        match event {
+            winit::event::Event::WindowEvent { event, .. } => {
+                self.platform.on_event(&self.ctx, event)
+            }
+            _ => false,
+        }
     }
 
     // TODO: is this better than Self::render() taking a closure?
@@ -52,10 +63,11 @@ impl Backend {
 
     pub fn render<F>(&mut self, desc: RenderDescriptor, build_ui: F)
     where
-        F: FnOnce(egui::CtxRef),
+        F: FnOnce(&Ctx),
     {
         let RenderDescriptor {
-            textures_to_update,
+            // TODO: use
+            textures_to_update: _,
             window,
             device,
             queue,
@@ -66,43 +78,50 @@ impl Backend {
 
         let screen_descriptor = {
             let size = window.inner_size();
-            renderer::ScreenDescriptor {
-                physical_width: size.width,
-                physical_height: size.height,
-                scale_factor: window.scale_factor() as f32,
+            renderer::renderer::ScreenDescriptor {
+                size_in_pixels: [size.width, size.height],
+                pixels_per_point: window.scale_factor() as f32,
             }
         };
 
-        self.platform.begin_frame();
-        build_ui(self.ctx());
-        let (shapes, needs_redraw) = self.platform.end_frame(window);
+        let raw_input: egui::RawInput = self.platform.take_egui_input(window);
+        let full_output = self.ctx.run(raw_input, |ctx| {
+            build_ui(ctx);
+        });
+        self.platform
+            .handle_platform_output(window, &self.ctx, full_output.platform_output);
 
-        let _ = needs_redraw; // TODO use
+        // TODO: use this
+        let _ = full_output.needs_repaint;
 
-        let meshes = &self.ctx().tessellate(shapes);
+        let clipped_primitives = self.ctx().tessellate(full_output.shapes);
 
-        // this is a mess.
-        // TODO: use iterators in the first place instead of slices
-        let textures_to_update = textures_to_update.iter().copied();
-        let egui_texture = self.ctx().texture();
-        let egui_texture = std::iter::once(egui_texture.as_ref());
-        let textures_to_update: Vec<&egui::Texture> =
-            textures_to_update.chain(egui_texture).collect();
+        self.renderer
+            .update_buffers(device, queue, &clipped_primitives, &screen_descriptor);
+        for (tex_id, img_delta) in full_output.textures_delta.set {
+            self.renderer
+                .update_texture(device, queue, tex_id, &img_delta);
+        }
+        for tex_id in full_output.textures_delta.free {
+            self.renderer.free_texture(&tex_id);
+        }
 
-        self.renderer.render(renderer::RenderDescriptor {
-            meshes,
-            textures_to_update: &textures_to_update,
-            device,
-            queue,
+        let clear_color = match load_operation {
+            wgpu::LoadOp::Clear(c) => Some(c),
+            wgpu::LoadOp::Load => None,
+        };
+
+        self.renderer.execute(
             encoder,
             render_target,
-            screen_descriptor,
-            load_operation,
-        });
+            &clipped_primitives,
+            &screen_descriptor,
+            clear_color,
+        );
     }
 
-    pub fn ctx(&self) -> egui::CtxRef {
-        self.platform.ctx()
+    pub fn ctx(&self) -> &Ctx {
+        &self.ctx
     }
 
     pub fn platform(&self) -> &Platform {
@@ -130,15 +149,11 @@ pub struct BackendDescriptor<'a> {
     pub device: &'a wgpu::Device,
     /// Render target format
     pub rt_format: wgpu::TextureFormat,
-    /// Egui style configuration.
-    pub style: egui::Style,
-    /// Egui font configuration.
-    pub font_definitions: egui::FontDefinitions,
 }
 
 pub struct RenderDescriptor<'a> {
     // TODO: turn into iterator
-    pub textures_to_update: &'a [&'a egui::Texture],
+    pub textures_to_update: &'a [&'a egui::TextureId],
     pub window: &'a window::Window,
     pub device: &'a wgpu::Device,
     pub queue: &'a wgpu::Queue,

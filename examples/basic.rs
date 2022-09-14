@@ -1,4 +1,6 @@
+use eww::wgpu::{Backends, TextureUsages};
 use eww::{egui, wgpu, winit};
+use eww::egui::Context;
 
 use winit::{
     event::{Event, WindowEvent},
@@ -19,11 +21,9 @@ fn main() {
     let wgpu = block_on(WgpuCtx::init(&window));
 
     let mut backend = eww::Backend::new(eww::BackendDescriptor {
-        window: &window,
         device: &wgpu.device,
         rt_format: wgpu::TextureFormat::Bgra8UnormSrgb,
-        style: egui::Style::default(),
-        font_definitions: egui::FontDefinitions::default(),
+        event_loop: &event_loop,
     });
 
     event_loop.run(move |event, _, control_flow| {
@@ -49,14 +49,23 @@ fn render(wgpu: &WgpuCtx, window: &Window, backend: &mut eww::Backend) {
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
 
-    let frame = match wgpu.swap_chain.get_current_frame() {
+    let frame = match wgpu.surface.get_current_texture() {
         Ok(frame) => frame,
         Err(e) => {
             eprintln!("wgpu error: {}", e);
             return;
         }
     };
-    let rt = &frame.output.view;
+    let rt = &frame.texture.create_view(&wgpu::TextureViewDescriptor {
+        aspect: wgpu::TextureAspect::All,
+        base_mip_level: 0,
+        mip_level_count: None,
+        base_array_layer: 0,
+        array_layer_count: None,
+        label: None,
+        format: None,
+        dimension: None,
+    });
 
     backend.render(
         eww::RenderDescriptor {
@@ -74,10 +83,11 @@ fn render(wgpu: &WgpuCtx, window: &Window, backend: &mut eww::Backend) {
     );
 
     wgpu.queue.submit(Some(encoder.finish()));
+    frame.present();
 }
 
-fn build_gui(ctx: egui::CtxRef) {
-    egui::Window::new("eww basic example").show(&ctx, |ui| {
+fn build_gui(ctx: &Context) {
+    egui::Window::new("eww basic example").show(ctx, |ui| {
         ui.label("This is a basic example of eww.");
     });
 }
@@ -85,17 +95,18 @@ fn build_gui(ctx: egui::CtxRef) {
 struct WgpuCtx {
     device: wgpu::Device,
     queue: wgpu::Queue,
-    swap_chain: wgpu::SwapChain,
+    surface: wgpu::Surface,
 }
 
 impl WgpuCtx {
     async fn init(window: &Window) -> Self {
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let instance = wgpu::Instance::new(Backends::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
+                force_fallback_adapter: false,
             })
             .await
             .unwrap();
@@ -114,20 +125,18 @@ impl WgpuCtx {
 
         let window_size = window.inner_size();
 
-        let sc_desc = wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+        surface.configure(&device, &wgpu::SurfaceConfiguration {
+            usage: TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: window_size.width,
             height: window_size.height,
-            present_mode: wgpu::PresentMode::Fifo,
-        };
-
-        let swap_chain = device.create_swap_chain(&surface, &sc_desc);
+            present_mode: wgpu::PresentMode::AutoVsync,
+        });
 
         Self {
             device,
             queue,
-            swap_chain,
+            surface,
         }
     }
 }

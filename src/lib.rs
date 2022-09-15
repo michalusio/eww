@@ -26,12 +26,15 @@ impl Backend {
             event_loop,
             device,
             rt_format,
+            style,
+            font_definitions
         } = desc;
 
         let platform = Platform::new(event_loop);
         let renderer = Renderer::new(device, rt_format, 1);
         let ctx = Ctx::default();
-
+        ctx.set_style(style);
+        ctx.set_fonts(font_definitions);
         Self {
             ctx,
             platform,
@@ -82,9 +85,7 @@ impl Backend {
         };
 
         let raw_input: egui::RawInput = self.platform.take_egui_input(window);
-        let full_output = self.ctx.run(raw_input, |ctx| {
-            build_ui(ctx);
-        });
+        let full_output = self.ctx.run(raw_input, build_ui);
         self.platform
             .handle_platform_output(window, &self.ctx, full_output.platform_output);
 
@@ -96,6 +97,7 @@ impl Backend {
             self.renderer
                 .update_texture(device, queue, tex_id, &img_delta);
         }
+
         for tex_id in full_output.textures_delta.free {
             self.renderer.free_texture(&tex_id);
         }
@@ -143,6 +145,10 @@ pub struct BackendDescriptor<'a, T: 'static> {
     pub device: &'a wgpu::Device,
     /// Render target format
     pub rt_format: wgpu::TextureFormat,
+    /// Egui style configuration.
+    pub style: egui::Style,
+    /// Egui font configuration.
+    pub font_definitions: egui::FontDefinitions,
 }
 
 pub struct RenderDescriptor<'a> {

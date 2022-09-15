@@ -24,6 +24,8 @@ fn main() {
         device: &wgpu.device,
         rt_format: wgpu::TextureFormat::Bgra8UnormSrgb,
         event_loop: &event_loop,
+        style: egui::Style::default(),
+        font_definitions: egui::FontDefinitions::default()
     });
 
     event_loop.run(move |event, _, control_flow| {

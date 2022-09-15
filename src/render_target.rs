@@ -1,4 +1,4 @@
-use egui_wgpu::wgpu;
+use egui_wgpu::wgpu::{self};
 use egui_winit::egui;
 
 pub struct RenderTarget {
@@ -63,7 +63,6 @@ impl RenderTarget {
         Self {
             texture,
             view,
-
             texture_id,
         }
     }

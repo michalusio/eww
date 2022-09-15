@@ -45,6 +45,9 @@ fn main() {
 }
 
 fn render(wgpu: &WgpuCtx, window: &Window, backend: &mut eww::Backend) {
+    let window_inner_size = window.inner_size();
+    if window_inner_size.width < 1 || window_inner_size.height < 1 { return; }
+
     let mut encoder = wgpu
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -87,7 +90,7 @@ fn render(wgpu: &WgpuCtx, window: &Window, backend: &mut eww::Backend) {
 }
 
 fn build_gui(ctx: &Context) {
-    egui::Window::new("eww basic example").show(ctx, |ui| {
+    egui::TopBottomPanel::top("eww basic example").show(ctx, |ui| {
         ui.label("This is a basic example of eww.");
     });
 }
